@@ -9,9 +9,8 @@ import net.bytebuddy.asm.Advice;
 public class TimerAdvice {   
 	    
 	@Advice.OnMethodEnter
-	public static OnMethodEnterReturn enter(@Advice.Origin String method, 
-			@Advice.AllArguments Object[] args, @AgentArguments String agentArguments) {
-		
+	public static OnMethodEnterReturn enter(@Advice.Origin String method, @AgentArguments String agentArguments) {
+//		String agentArguments = "org.apache.bcel.,29c17da7c24168113063cffae1a7f974225f2d0f,59";
 		String[] agentArgs = agentArguments.trim().split("\\s*,\\s*");
 		
 		OnMethodEnterReturn onEnterValues = new OnMethodEnterReturn();
@@ -19,10 +18,11 @@ public class TimerAdvice {
 		onEnterValues.setCommitHash(agentArgs[1]);
 		onEnterValues.setIdRun(Integer.parseInt(agentArgs[2]));
 		onEnterValues.setStartTime(System.currentTimeMillis());
-		String className = parseClassName(method).replace(onEnterValues.getPackageName(), "") + ".java";
+		String className = parseClassName(method);
 		System.out.println("onEnter - Class: " + className + " method: " + method);
+//		System.out.println("onEnter: " + " method: " + method);
 //		int idMethod = saveOnEnter(onEnterValues.getCommitHash(), className, method, onEnterValues.getIdRun());
-//		
+		
 		MethodEnter m = new MethodEnter(onEnterValues.getCommitHash(), className, method, onEnterValues.getIdRun());
 
 //		MethodEnter m = new MethodEnter();
@@ -48,8 +48,9 @@ public class TimerAdvice {
 	}
 	
 	@Advice.OnMethodExit(onThrowable = Throwable.class)
-	public static void exit(@Advice.Origin String method, @Advice.Enter OnMethodEnterReturn onEnterValues) {		
-//			, @Advice.Thrown Throwable thrown) {
+	public static void exit(@Advice.Origin String method
+	        , @Advice.Enter OnMethodEnterReturn onEnterValues 	
+	){
 		String packName = onEnterValues.getPackageName(); // "com.github.paulorfarah.mavenproject.";
 		String className = parseClassName(method).replace(packName, "") + ".java";
 		long start = onEnterValues.getStartTime();
@@ -58,7 +59,8 @@ public class TimerAdvice {
 //		System.out.println(returned);
 //		String returnedType = returned.getClass().toString();
 		String returnedType = "teste";
-		System.out.println("onExit - Class: " + className + " method: " + method + " start: " + start + " end: " + end + " duration: " + duration + "retValue: test" + returnedType);
+		System.out.println("onExit - Class: " + className + " method: " + method + " start: " + start + " end: " + end + " duration: " + duration + "retValue:" );
+//		System.out.println("onExit - method: " + method + " end: " + end);
 //		System.out.println(thrown);
 				
 		MethodExit m = new MethodExit(onEnterValues.getCommitHash(), className, method, duration, onEnterValues.getIdRun(), onEnterValues.getIdMethod(), returnedType);
@@ -103,6 +105,7 @@ public class TimerAdvice {
 	
 	public static String parseClassName(String method) {
 //		System.out.println("parseClassName");
+		String className = null;
 		Pattern p = Pattern.compile("[^\\s]*\\(");
 		Matcher m = p.matcher(method);
 		if (m.find()) {
@@ -111,16 +114,18 @@ public class TimerAdvice {
 		    
 		    String[] methodAux = methodName.split("\\.");
 		    if(methodAux.length > 0) {
-				String className = methodAux[0];
+				className = methodAux[0];
 				for(int i = 1; i < methodAux.length-1; i++) {
 					className += "." + methodAux[i];
 				}
-				return className;
+//				return className;
 		    }else {
-		    	return methodName;
+		    	className = methodName;
 		    }
 		}
-		return null;
+		String last = className.substring(className.lastIndexOf('.') + 1);
+		className = last + ".java";
+		return className;
 	}
 
 
