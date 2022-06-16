@@ -104,7 +104,7 @@ public class TimerAdvice {
 	}
 	
 	public static String parseClassName(String method) {
-//		System.out.println("parseClassName");
+//		System.out.println("parseClassName: " + method);
 		String className = null;
 		Pattern p = Pattern.compile("[^\\s]*\\(");
 		Matcher m = p.matcher(method);

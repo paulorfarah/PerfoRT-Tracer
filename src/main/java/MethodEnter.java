@@ -1,9 +1,12 @@
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Properties;
 
 
 //https://stackoverflow.com/questions/9148899/returning-value-from-thread
@@ -44,6 +47,21 @@ public class MethodEnter { //implements Runnable {
 		try{
 			Class.forName("com.mysql.cj.jdbc.Driver");
             con = DriverManager.getConnection("jdbc:mysql://localhost:3306/perfrt","root","password");
+//			Properties prop = new Properties();
+//			String fileName = "../../perfrt/.env";
+//			try (FileInputStream fis = new FileInputStream(fileName)) {
+//			    prop.load(fis);
+//			} catch (IOException ex) {
+//				System.out.println("ERROR reading .env file");
+//			}
+//			String db_user=prop.getProperty("db_user");
+//			String db_pass=prop.getProperty("db_pass");
+//			String db_name=prop.getProperty("db_name");
+//			String db_host=prop.getProperty("db_host");
+//			String db_port=prop.getProperty("db_port");
+//
+//			Class.forName("com.mysql.cj.jdbc.Driver");
+//			con = DriverManager.getConnection("jdbc:mysql://" + db_host + ":" + db_port + "/" + db_name,db_user,db_pass);
 			st = con.createStatement();			  
 			String query = "SELECT f.* FROM perfrt.files AS f INNER JOIN perfrt.commits AS c ON f.commit_id = c.id WHERE c.commit_hash='"+hashCommit + "' AND f.name LIKE '%"+className+"';";
 			System.out.println("query: " + query);

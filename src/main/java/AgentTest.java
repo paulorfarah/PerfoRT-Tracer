@@ -21,8 +21,8 @@ public static void premain(String arguments, Instrumentation instrumentation) {
 		e.printStackTrace();
 	}
     System.out.println("Premain" );
-//    final String packName = agentArgs[0];
-    final String packName = "";
+    final String packName = agentArgs[0];
+//    final String packName = "";
     
     new AgentBuilder.Default()
 	    .with(new AgentBuilder.InitializationStrategy.SelfInjection.Eager())
