@@ -1,104 +1,59 @@
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.Properties;
 
-
-//https://stackoverflow.com/questions/9148899/returning-value-from-thread
-//public class Foo implements Runnable {
-//    private volatile int value;
-//
-//    @Override
-//    public void run() {
-//       value = 2;
-//    }
-//
-//    public int getValue() {
-//        return value;
-//    }
-//}
-
-//Foo foo = new Foo();
-//Thread thread = new Thread(foo);
-//thread.start();
-//thread.join();
-//int value = foo.getValue();
-
-public class MethodEnter { //implements Runnable {
+public class MethodEnter {
 	private int id;
 	private String hashCommit, className, methodName;
 	private int idRun;
-	
-//	@Override
-//    public void run() {
-	public MethodEnter(String hashCommit,  String className, String methodName, int idRun) {
-		System.out.println("MethodEnter");
+
+	public MethodEnter(String hashCommit, String className, String methodName, int idRun) {
 		Connection con = null;
 		Statement st = null;
 		ResultSet rs = null;
 		ResultSet rs2 = null;
-		
+
 		id = -1;
-		try{
+		try {
 			Class.forName("com.mysql.cj.jdbc.Driver");
-            con = DriverManager.getConnection("jdbc:mysql://localhost:3306/perfrt","root","password");
-//			Properties prop = new Properties();
-//			String fileName = "../../perfrt/.env";
-//			try (FileInputStream fis = new FileInputStream(fileName)) {
-//			    prop.load(fis);
-//			} catch (IOException ex) {
-//				System.out.println("ERROR reading .env file");
-//			}
-//			String db_user=prop.getProperty("db_user");
-//			String db_pass=prop.getProperty("db_pass");
-//			String db_name=prop.getProperty("db_name");
-//			String db_host=prop.getProperty("db_host");
-//			String db_port=prop.getProperty("db_port");
-//
-//			Class.forName("com.mysql.cj.jdbc.Driver");
-//			con = DriverManager.getConnection("jdbc:mysql://" + db_host + ":" + db_port + "/" + db_name,db_user,db_pass);
-			st = con.createStatement();			  
-			String query = "SELECT f.* FROM perfrt.files AS f INNER JOIN perfrt.commits AS c ON f.commit_id = c.id WHERE c.commit_hash='"+hashCommit + "' AND f.name LIKE '%"+className+"';";
-			System.out.println("query: " + query);
+			con = DriverManager.getConnection("jdbc:mysql://localhost:3306/perfrt", "root", "password");
+
+			st = con.createStatement();
+			String query = "SELECT f.* FROM perfrt.files AS f INNER JOIN perfrt.commits AS c ON f.commit_id = c.id WHERE c.commit_hash='"
+					+ hashCommit + "' AND f.name LIKE '%" + className + "';";
 			rs = st.executeQuery(query);
-			  
-			if( rs.next()) {
-				int idFile = rs.getInt("id");	
-				java.sql.Timestamp date = new java.sql.Timestamp(new java.util.Date().getTime());
-				String query1 = "insert into perfrt.methods (created_at, "
-						+ "updated_at, file_id, run_id, name)"
+
+			if (rs.next()) {
+				int idFile = rs.getInt("id");
+				java.sql.Timestamp startedAt = new java.sql.Timestamp(new java.util.Date().getTime());
+				String query1 = "insert into perfrt.methods (created_at, " + "updated_at, file_id, run_id, name)"
 						+ " values (?, ?, ?, ?, ?)";
 
 				PreparedStatement preparedStmt = con.prepareStatement(query1, Statement.RETURN_GENERATED_KEYS);
-						      preparedStmt.setTimestamp(1, date);
-						      preparedStmt.setTimestamp(2, date);
-						      preparedStmt.setInt(3, idFile);
-						      preparedStmt.setInt(4, idRun);
-						      preparedStmt.setString(5, methodName);
+				preparedStmt.setTimestamp(1, startedAt);
+				preparedStmt.setTimestamp(2, startedAt);
+				preparedStmt.setInt(3, idFile);
+				preparedStmt.setInt(4, idRun);
+				preparedStmt.setString(5, methodName);
 
 				preparedStmt.executeUpdate();
 				rs2 = preparedStmt.getGeneratedKeys();
-	            if(rs2.next())
-	            {
-	                id = rs2.getInt(1);
-	            }
-	            rs.close();
-	            rs2.close();
-	            st.close();
+				if (rs2.next()) {
+					id = rs2.getInt(1);
+				}
+				rs.close();
+				rs2.close();
+				st.close();
 				con.close();
 			}
-			
-		}
-		catch (Exception e)
-		{
-			if( con != null) {
-				if(st != null) {
-					if(rs != null) {
+
+		} catch (Exception e) {
+			if (con != null) {
+				if (st != null) {
+					if (rs != null) {
 						try {
 							rs.close();
 						} catch (SQLException e1) {
@@ -106,7 +61,7 @@ public class MethodEnter { //implements Runnable {
 							e1.printStackTrace();
 						}
 					}
-					if(rs2 != null) {
+					if (rs2 != null) {
 						try {
 							rs2.close();
 						} catch (SQLException e1) {
@@ -134,13 +89,12 @@ public class MethodEnter { //implements Runnable {
 			System.err.println(e.getMessage());
 			e.printStackTrace();
 		}
-//		return id;
-    }
-	
+	}
+
 	public int getId() {
 		return id;
 	}
-	
+
 	public String getHashCommit() {
 		return hashCommit;
 	}
@@ -173,7 +127,3 @@ public class MethodEnter { //implements Runnable {
 		this.idRun = idRun;
 	}
 }
-
-//public static int saveOnEnter(String hashCommit, String className, String methodName, int idRun) {
-//	
-//}
