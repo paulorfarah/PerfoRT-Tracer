@@ -1,4 +1,4 @@
-
+package perfrt.profiler;
 
 import java.io.FileNotFoundException;
 import java.io.PrintStream;
@@ -7,8 +7,6 @@ import java.lang.instrument.Instrumentation;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.asm.Advice;
 import net.bytebuddy.matcher.ElementMatchers;
-import perfrt.profiler.AgentArguments;
-import perfrt.profiler.TimerAdvice;
 
 class AgentTest {
 

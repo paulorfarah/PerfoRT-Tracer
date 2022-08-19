@@ -1,9 +1,14 @@
+package perfrt.profiler;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+
+import com.zaxxer.hikari.HikariDataSource;
+
+import perfrt.db.ConnectionPools;
 
 public class MethodExit {
 
@@ -19,8 +24,10 @@ public class MethodExit {
 		long ownDuration = duration;
 
 		try {
-			Class.forName("com.mysql.cj.jdbc.Driver");
-			con = DriverManager.getConnection("jdbc:mysql://localhost:3306/perfrt", "root", "password");
+//			Class.forName("com.mysql.cj.jdbc.Driver");
+//			con = DriverManager.getConnection("jdbc:mysql://localhost:3306/perfrt", "root", "password");
+			HikariDataSource ds = ConnectionPools.getProcessing();
+			con = ds.getConnection();
 			st = con.createStatement();
 
 			// calculate own_duration
@@ -55,31 +62,31 @@ public class MethodExit {
 			} else {
 				String queryUpdate = "UPDATE perfrt.methods SET ended_at=?, own_duration=?, cumulative_duration=?, finished=?, return_value=? WHERE id=?";
 				PreparedStatement preparedStmt = con.prepareStatement(queryUpdate);
-				preparedStmt.setTimestamp(2, new java.sql.Timestamp(endedAt));
-				preparedStmt.setLong(1, ownDuration);
-				preparedStmt.setLong(2, duration);
-				preparedStmt.setBoolean(3, true);
-				preparedStmt.setString(4, retValue);
-				preparedStmt.setInt(5, idMethod);
+				preparedStmt.setTimestamp(1, new java.sql.Timestamp(endedAt));
+				preparedStmt.setLong(2, ownDuration);
+				preparedStmt.setLong(3, duration);
+				preparedStmt.setBoolean(4, true);
+				preparedStmt.setString(5, retValue);
+				preparedStmt.setInt(6, idMethod);
 
 				preparedStmt.executeUpdate();
 				preparedStmt.close();
 			}
 			rs.close();
 			st.close();
-			con.close();
+//			con.close();
 		} catch (Exception e) {
 			System.err.println("saveOnExit: Got an exception!");
 			System.err.println(e.getMessage());
 			e.printStackTrace();
-			if (con != null) {
-				try {
-					con.close();
-				} catch (SQLException e1) {
-					System.err.println("cannot close database connection!");
-					System.err.println(e1.getMessage());
-				}
-			}
+//			if (con != null) {
+//				try {
+////					con.close();
+//				} catch (SQLException e1) {
+//					System.err.println("cannot close database connection!");
+//					System.err.println(e1.getMessage());
+//				}
+//			}
 			if (con != null) {
 				if (st != null) {
 					if (rs != null) {
@@ -97,12 +104,12 @@ public class MethodExit {
 						e1.printStackTrace();
 					}
 				}
-				try {
-					con.close();
-				} catch (SQLException e1) {
-					System.out.println("Error closing mysql connection: " + e1.getMessage());
-					e1.printStackTrace();
-				}
+//				try {
+////					con.close();
+//				} catch (SQLException e1) {
+//					System.out.println("Error closing mysql connection: " + e1.getMessage());
+//					e1.printStackTrace();
+//				}
 			}
 		}
 	}

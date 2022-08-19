@@ -1,9 +1,13 @@
+package perfrt.profiler;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+
+import com.zaxxer.hikari.HikariDataSource;
+
+import perfrt.db.ConnectionPools;
 
 public class MethodEnter {
 	private int id;
@@ -18,9 +22,11 @@ public class MethodEnter {
 
 		id = -1;
 		try {
-			Class.forName("com.mysql.cj.jdbc.Driver");
-			con = DriverManager.getConnection("jdbc:mysql://localhost:3306/perfrt", "root", "password");
-
+//			Class.forName("com.mysql.cj.jdbc.Driver");
+//			con = DriverManager.getConnection("jdbc:mysql://localhost:3306/perfrt", "root", "password");
+			HikariDataSource ds = ConnectionPools.getProcessing();
+			con = ds.getConnection();
+			
 			st = con.createStatement();
 			String query = "SELECT f.* FROM perfrt.files AS f INNER JOIN perfrt.commits AS c ON f.commit_id = c.id WHERE c.commit_hash='"
 					+ hashCommit + "' AND f.name LIKE '%" + className + "';";
@@ -47,7 +53,7 @@ public class MethodEnter {
 				rs.close();
 				rs2.close();
 				st.close();
-				con.close();
+//				con.close();
 			}
 
 		} catch (Exception e) {
@@ -76,12 +82,12 @@ public class MethodEnter {
 						e1.printStackTrace();
 					}
 				}
-				try {
-					con.close();
-				} catch (SQLException e1) {
-					System.out.println("Error closing mysql connection: " + e1.getMessage());
-					e1.printStackTrace();
-				}
+//				try {
+//					con.close();
+//				} catch (SQLException e1) {
+//					System.out.println("Error closing mysql connection: " + e1.getMessage());
+//					e1.printStackTrace();
+//				}
 			}
 			System.out.println("saveOnEnter: Got an exception!");
 			System.out.println(e.getMessage());
