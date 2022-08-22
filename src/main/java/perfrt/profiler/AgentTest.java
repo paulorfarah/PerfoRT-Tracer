@@ -29,7 +29,7 @@ class AgentTest {
 				.type((ElementMatchers.nameStartsWith(packName)))
 				.transform(
 						(builder, typeDescription, classLoader,
-								module) -> builder.method(ElementMatchers.any()).intercept(Advice.withCustomMapping()
+								module) -> builder.method(ElementMatchers.nameContains(packName)).intercept(Advice.withCustomMapping()
 										.bind(AgentArguments.class, arguments).to(TimerAdvice.class)))
 				.installOn(instrumentation);
 	}

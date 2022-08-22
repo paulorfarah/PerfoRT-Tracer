@@ -4,20 +4,20 @@ public class OnMethodEnterReturn {
 	private long startTime;
 	private String packageName;
 	private String commitHash;
-	private int idRun;
-	private int idMethod;
+	private int runId;
+	private int methodId;
 	
-	public int getIdMethod() {
-		return idMethod;
+	public int getMethodId() {
+		return methodId;
 	}
-	public void setIdMethod(int idMethod) {
-		this.idMethod = idMethod;
+	public void setMethodId(int methodId) {
+		this.methodId = methodId;
 	}
-	public int getIdRun() {
-		return idRun;
+	public int getRunId() {
+		return runId;
 	}
-	public void setIdRun(int idTestCase) {
-		this.idRun = idTestCase;
+	public void setRunId(int idTestCase) {
+		this.runId = idTestCase;
 	}
 	public long getStartTime() {
 		return startTime;

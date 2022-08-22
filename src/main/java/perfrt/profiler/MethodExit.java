@@ -1,164 +1,117 @@
 package perfrt.profiler;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
-
 import com.zaxxer.hikari.HikariDataSource;
 
 import perfrt.db.ConnectionPools;
 
 public class MethodExit {
 
-	private String hashCommit, className, methodName, retValue;
-	private long duration;
-	private int idRun, idMethod;
-
-	public MethodExit(String hashCommit, String className, String methodName, long endedAt, long duration, int idRun,
-			int idMethod, String retValue) {
-		Connection con = null;
-		Statement st = null;
-		ResultSet rs = null;
+	public MethodExit(String hashCommit, String className, String methodName, long endedAt, long duration, int methodId, String retValue) {
 		long ownDuration = duration;
 
-		try {
-//			Class.forName("com.mysql.cj.jdbc.Driver");
-//			con = DriverManager.getConnection("jdbc:mysql://localhost:3306/perfrt", "root", "password");
 			HikariDataSource ds = ConnectionPools.getProcessing();
-			con = ds.getConnection();
-			st = con.createStatement();
 
-			// calculate own_duration
-			String ownDurationSql = "SELECT SUM(cumulative_duration) AS sum FROM perfrt.methods WHERE caller_id="
-					+ idMethod + ";";
-			ResultSet rsOwnDuration = st.executeQuery(ownDurationSql);
-			if (rsOwnDuration.next()) {
-				long sumCumulativeDuration = rsOwnDuration.getLong("sum");
-				ownDuration -= sumCumulativeDuration;
-			}
-			rsOwnDuration.close();
+			ownDuration = calcOwnDuration(ds, methodId, ownDuration);
 
-			String queryCallerId = "SELECT * from perfrt.methods AS m INNER JOIN perfrt.files AS f ON m.file_id=f.id INNER JOIN perfrt.commits AS c ON f.commit_id=c.id WHERE m.id < "
-					+ idMethod + " AND m.caller_id IS NULL AND c.commit_hash='" + hashCommit
-					+ "' AND m.finished=false ORDER BY m.id DESC LIMIT 1;";
-			rs = st.executeQuery(queryCallerId);
+			int callerId = getCallerId(ds, hashCommit, methodId);
+			updateMethod(ds, methodId, callerId, endedAt, duration, retValue, ownDuration);
+	}
 
-			if (rs.next()) {
-				int idCaller = rs.getInt("id");
-				String queryUpdate = "UPDATE perfrt.methods SET caller_id=?, ended_at=?, own_duration=?, cumulative_duration=?, finished=?, return_value=? WHERE id=?";
-				PreparedStatement preparedStmt = con.prepareStatement(queryUpdate);
-				preparedStmt.setInt(1, idCaller);
-				preparedStmt.setTimestamp(2, new java.sql.Timestamp(endedAt));
-				preparedStmt.setLong(3, ownDuration);
-				preparedStmt.setLong(4, duration);
-				preparedStmt.setBoolean(5, true);
-				preparedStmt.setString(6, retValue);
-				preparedStmt.setInt(7, idMethod);
-
-				preparedStmt.executeUpdate();
-				preparedStmt.close();
-			} else {
-				String queryUpdate = "UPDATE perfrt.methods SET ended_at=?, own_duration=?, cumulative_duration=?, finished=?, return_value=? WHERE id=?";
-				PreparedStatement preparedStmt = con.prepareStatement(queryUpdate);
-				preparedStmt.setTimestamp(1, new java.sql.Timestamp(endedAt));
-				preparedStmt.setLong(2, ownDuration);
-				preparedStmt.setLong(3, duration);
-				preparedStmt.setBoolean(4, true);
-				preparedStmt.setString(5, retValue);
-				preparedStmt.setInt(6, idMethod);
-
-				preparedStmt.executeUpdate();
-				preparedStmt.close();
-			}
-			rs.close();
-			st.close();
-//			con.close();
-		} catch (Exception e) {
-			System.err.println("saveOnExit: Got an exception!");
-			System.err.println(e.getMessage());
-			e.printStackTrace();
-//			if (con != null) {
-//				try {
-////					con.close();
-//				} catch (SQLException e1) {
-//					System.err.println("cannot close database connection!");
-//					System.err.println(e1.getMessage());
-//				}
-//			}
-			if (con != null) {
-				if (st != null) {
-					if (rs != null) {
-						try {
-							rs.close();
-						} catch (SQLException e1) {
-							System.out.println("Error closing resultset: " + e1.getMessage());
-							e1.printStackTrace();
-						}
-					}
-					try {
-						st.close();
-					} catch (SQLException e1) {
-						System.out.println("Error closing statement: " + e1.getMessage());
-						e1.printStackTrace();
-					}
-				}
-//				try {
-////					con.close();
-//				} catch (SQLException e1) {
-//					System.out.println("Error closing mysql connection: " + e1.getMessage());
-//					e1.printStackTrace();
-//				}
-			}
+	private void updateMethod(HikariDataSource ds, int methodId, int callerId, long endedAt, long duration, String retValue, long ownDuration) {
+		if(callerId != -1) {
+			//first method
+			String SQL_UPDATE_METHOD = "UPDATE perfrt.methods SET caller_id=?, ended_at=?, own_duration=?, cumulative_duration=?, finished=?, return_value=? WHERE id=?";
+			try (Connection connection = ds.getConnection();
+			         PreparedStatement ps = connection.prepareStatement(SQL_UPDATE_METHOD)) {				 
+						ps.setInt(1, callerId);
+						ps.setTimestamp(2, new java.sql.Timestamp(endedAt));
+						ps.setLong(3, ownDuration);
+						ps.setLong(4, duration);
+						ps.setBoolean(5, true);
+						ps.setString(6, retValue);
+						ps.setInt(7, methodId);
+						
+						ps.executeUpdate();
+						
+		        } catch (SQLException e) {
+		        	System.out.println("SQL EXCEPTION - [UPDATE METHOD] [METHOD_ID] : "+ methodId);
+		            e.printStackTrace();;
+		        }
+			
+		} else {
+			//not first method
+			
+			String SQL_UPDATE_METHOD = "UPDATE perfrt.methods SET ended_at=?, own_duration=?, cumulative_duration=?, finished=?, return_value=? WHERE id=?";
+			try (Connection connection = ds.getConnection();
+			         PreparedStatement ps = connection.prepareStatement(SQL_UPDATE_METHOD)) {				 
+						ps.setTimestamp(1, new java.sql.Timestamp(endedAt));
+						ps.setLong(2, ownDuration);
+						ps.setLong(3, duration);
+						ps.setBoolean(4, true);
+						ps.setString(5, retValue);
+						ps.setInt(6, methodId);
+						
+						ps.executeUpdate();
+						
+		        } catch (SQLException e) {
+		        	System.out.println("SQL EXCEPTION - [UPDATE METHOD] [METHOD_ID] : "+ methodId);
+		            e.printStackTrace();;
+		        }
+			
 		}
 	}
 
-	public String getHashCommit() {
-		return hashCommit;
+	private int getCallerId(HikariDataSource ds, String hashCommit, int methodId) {
+		int callerId = -1;
+		String SQL_CALLER_ID = "SELECT * from perfrt.methods AS m INNER JOIN perfrt.files AS f ON m.file_id=f.id INNER JOIN perfrt.commits AS c ON f.commit_id=c.id WHERE m.id < "
+				+ methodId + " AND m.caller_id IS NULL AND c.commit_hash='" + hashCommit
+				+ "' AND m.finished=false ORDER BY m.id DESC LIMIT 1;";
+		
+		try (Connection connection = ds.getConnection();
+	            PreparedStatement ps = connection.prepareStatement(SQL_CALLER_ID);
+				ResultSet rs = ps.executeQuery();) {
+				 
+					if (rs.next()) {
+						callerId = rs.getInt("id");
+					}
+						
+        } catch (SQLException e) {
+        	System.out.println("SQL EXCEPTION - [calcOwnDuration] [METHOD_ID] : " + methodId);
+            e.printStackTrace();
+        }
+		return callerId;
 	}
 
-	public void setHashCommit(String hashCommit) {
-		this.hashCommit = hashCommit;
-	}
-
-	public String getClassName() {
-		return className;
-	}
-
-	public void setClassName(String className) {
-		this.className = className;
-	}
-
-	public String getMethodName() {
-		return methodName;
-	}
-
-	public void setMethodName(String methodName) {
-		this.methodName = methodName;
-	}
-
-	public String getRetValue() {
-		return retValue;
-	}
-
-	public void setRetValue(String retValue) {
-		this.retValue = retValue;
-	}
-
-	public long getDuration() {
-		return duration;
-	}
-
-	public void setDuration(long duration) {
-		this.duration = duration;
-	}
-
-	public int getIdRun() {
-		return idRun;
-	}
-
-	public void setIdRun(int idRun) {
-		this.idRun = idRun;
+	private long calcOwnDuration(HikariDataSource ds, int methodId, long ownDuration) {		
+//		long cumulativeDuration;
+		String SQL_DURATION = "SELECT SUM(cumulative_duration) AS sum FROM perfrt.methods WHERE caller_id=" + methodId + ";";
+		try (Connection connection = ds.getConnection();
+	            PreparedStatement ps = connection.prepareStatement(SQL_DURATION);
+				ResultSet rs = ps.executeQuery();) {
+				 
+					if (rs.next()) {
+						long sumCumulativeDuration = rs.getLong("sum");
+						ownDuration -= sumCumulativeDuration;
+					}
+						
+        } catch (SQLException e) {
+        	System.out.println("SQL EXCEPTION - [calcOwnDuration] [METHOD_ID] : " + methodId);
+            e.printStackTrace();
+        }
+		return ownDuration;
+		
+//		// calculate own_duration
+//		String ownDurationSql = "SELECT SUM(cumulative_duration) AS sum FROM perfrt.methods WHERE caller_id="
+//				+ methodId + ";";
+//		ResultSet rsOwnDuration = st.executeQuery(ownDurationSql);
+//		if (rsOwnDuration.next()) {
+//			long sumCumulativeDuration = rsOwnDuration.getLong("sum");
+//			ownDuration -= sumCumulativeDuration;
+//		}
+//		rsOwnDuration.close();
+//		return ownDuration;
 	}
 }

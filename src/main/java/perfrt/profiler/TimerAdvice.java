@@ -12,41 +12,40 @@ public class TimerAdvice {
 //		String agentArguments = "org.apache.bcel.,29c17da7c24168113063cffae1a7f974225f2d0f,59";
 		OnMethodEnterReturn onEnterValues = null;
 		String[] agentArgs = agentArguments.trim().split("\\s*,\\s*");
-//		if (method.contains(agentArgs[0])) {
+		if (method.contains(agentArgs[0])) {
 
 			onEnterValues = new OnMethodEnterReturn();
 			onEnterValues.setPackageName(agentArgs[0]);
 			onEnterValues.setCommitHash(agentArgs[1]);
-			onEnterValues.setIdRun(Integer.parseInt(agentArgs[2]));
+			onEnterValues.setRunId(Integer.parseInt(agentArgs[2]));
 			onEnterValues.setStartTime(System.currentTimeMillis());
 			String className = parseClassName(method);
-			System.out.println("onEnter - Class: " + className + " method: " + method);
-			MethodEnter m = new MethodEnter(onEnterValues.getCommitHash(), className, method, onEnterValues.getIdRun());
-			int idMethod = m.getId();
-			onEnterValues.setIdMethod(idMethod);
+			System.out.println("[ENTER] -\t[CLASS] : " + className + "\t[METHOD] : " + method);
+			MethodEnter m = new MethodEnter(onEnterValues.getCommitHash(), className, method, onEnterValues.getRunId());
+			int methodId = m.getId();
+			onEnterValues.setMethodId(methodId);
 	
 	//		read stack
 	//		var walker =  StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
 	//		walker.forEach(SF_CONSUMER);
 			
-//		}
+		}
 		return onEnterValues;
 	}
 
 	@Advice.OnMethodExit(onThrowable = Throwable.class)
 	public static void exit(@Advice.Origin String method, @Advice.Enter OnMethodEnterReturn onEnterValues) {
-//		if(onEnterValues!= null) { 
+		if(onEnterValues!= null) { 
 			long end = System.currentTimeMillis();
 			String packName = onEnterValues.getPackageName();
 			String className = parseClassName(method).replace(packName, "") + ".java";
 			long start = onEnterValues.getStartTime();
 			long duration = end - start;
 			String returnedType = "";
-			MethodExit m = new MethodExit(onEnterValues.getCommitHash(), className, method, end, duration,
-					onEnterValues.getIdRun(), onEnterValues.getIdMethod(), returnedType);
-			System.out.println("onExit - Class: " + className + " method: " + method + " start: " + start + " end: " + end
-					+ " duration: " + duration + "retValue:");
-//		}
+			MethodExit m = new MethodExit(onEnterValues.getCommitHash(), className, method, end, duration, onEnterValues.getMethodId(), returnedType);
+			System.out.println("[EXIT] -\t[CLASS] : " + className + "\t[METHOD] : " + method + "\t[START] : " + start + "\t[END] : " + end
+					+ " [DURATION] : " + duration);
+		}
 	}
 
 	public static String parseClassName(String method) {
