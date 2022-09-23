@@ -1,4 +1,4 @@
-package perfrt.profiler;
+package perform.tracer;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -7,10 +7,11 @@ import java.sql.Statement;
 
 import com.zaxxer.hikari.HikariDataSource;
 
-import perfrt.db.ConnectionPools;
+import perform.db.ConnectionPools;
 
 public class MethodEnter {
 	private int id;
+	private long startTime;
 
 	public MethodEnter(String hashCommit, String className, String methodName, int runId) {
 		id = -1;
@@ -19,45 +20,15 @@ public class MethodEnter {
 		int fileId = getFileID(ds, hashCommit, className);
 		if(fileId != -1)
 				id = addMethod(ds, fileId, runId, methodName);
-		
-//		con = ds.getConnection();
-//		
-//		st = con.createStatement();
-//		String query = "SELECT f.id FROM perfrt.files AS f INNER JOIN perfrt.commits AS c ON f.commit_id = c.id WHERE c.commit_hash='"
-//				+ hashCommit + "' AND f.name LIKE '%" + className + "';";
-//		rs = st.executeQuery(query);
-
-//		if (rs.next()) {
-//			int fileId = rs.getInt("id");
-//			java.sql.Timestamp startedAt = new java.sql.Timestamp(new java.util.Date().getTime());
-//			String query1 = "insert into perfrt.methods (created_at, " + "updated_at, file_id, run_id, name)"
-//					+ " values (?, ?, ?, ?, ?)";
-
-//			PreparedStatement preparedStmt = con.prepareStatement(query1, Statement.RETURN_GENERATED_KEYS);
-//			preparedStmt.setTimestamp(1, startedAt);
-//			preparedStmt.setTimestamp(2, startedAt);
-//			preparedStmt.setInt(3, fileId);
-//			preparedStmt.setInt(4, runId);
-//			preparedStmt.setString(5, methodName);
-//
-//			preparedStmt.executeUpdate();
-//			rs2 = preparedStmt.getGeneratedKeys();
-//			if (rs2.next()) {
-//				id = rs2.getInt(1);
-//			}
-//			rs.close();
-//			rs2.close();
-//			st.close();
-//				con.close();
 		}
 
 	private int addMethod(HikariDataSource ds, int fileId, int runId, String methodName) {
 		int methodId = -1;
-		String SQL_INSERT_METHOD = "insert into perfrt.methods (created_at, " + "updated_at, file_id, run_id, name)"
+		String SQL_INSERT_METHOD = "insert into perform.methods (created_at, " + "updated_at, file_id, run_id, name)"
 					+ " values (?, ?, ?, ?, ?)";
 	
 		java.sql.Timestamp startedAt = new java.sql.Timestamp(new java.util.Date().getTime());
-		
+		this.startTime = startedAt.getTime();
 		
 		try (Connection connection = ds.getConnection();
 	         PreparedStatement ps = connection.prepareStatement(SQL_INSERT_METHOD, Statement.RETURN_GENERATED_KEYS)) {				 
@@ -81,7 +52,8 @@ public class MethodEnter {
 
 	private int getFileID(HikariDataSource ds, String hashCommit, String className) {
 		int fileId = -1;
-		String SQL_FILE_ID = "SELECT f.id FROM perfrt.files AS f INNER JOIN perfrt.commits AS c ON f.commit_id = c.id WHERE c.commit_hash='"
+//		String SQL_FILE_ID = "SELECT f.id FROM perfrt.files AS f INNER JOIN perfrt.commits AS c ON f.commit_id = c.id WHERE c.commit_hash='"
+		String SQL_FILE_ID = "SELECT f.id FROM files AS f INNER JOIN commits AS c ON f.commit_id = c.id WHERE c.commit_hash='"
 				+ hashCommit + "' AND f.name LIKE '%" + className + "';";
 		try (Connection connection = ds.getConnection();
 	            PreparedStatement ps = connection.prepareStatement(SQL_FILE_ID);
@@ -100,5 +72,9 @@ public class MethodEnter {
 
 	public int getId() {
 		return id;
+	}
+	
+	public long getStartTime() {
+		return startTime;
 	}
 }

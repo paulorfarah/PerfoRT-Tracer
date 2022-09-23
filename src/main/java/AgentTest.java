@@ -7,8 +7,8 @@ import java.lang.instrument.Instrumentation;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.asm.Advice;
 import net.bytebuddy.matcher.ElementMatchers;
-import perfrt.profiler.AgentArguments;
-import perfrt.profiler.TimerAdvice;
+import perform.tracer.AgentArguments;
+import perform.tracer.TimerAdvice;
 
 class AgentTest {
 
@@ -17,8 +17,8 @@ class AgentTest {
 		String[] agentArgs = arguments.trim().split("\\s*,\\s*");
 
 		try {
-			PrintStream fileOut = new PrintStream("../../perfrt/logs/" + agentArgs[0] + "-" + agentArgs[1] + "-"
-					+ agentArgs[2] + "-perfrt-profiler.log");
+			PrintStream fileOut = new PrintStream("../../perform/logs/" + agentArgs[0] + "-" + agentArgs[1] + "-"
+					+ agentArgs[2] + "-perform-tracer.log");
 			System.setOut(fileOut);
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();

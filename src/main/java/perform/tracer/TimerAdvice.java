@@ -1,4 +1,4 @@
-package perfrt.profiler;
+package perform.tracer;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -13,17 +13,17 @@ public class TimerAdvice {
 		OnMethodEnterReturn onEnterValues = null;
 		String[] agentArgs = agentArguments.trim().split("\\s*,\\s*");
 		if (method.contains(agentArgs[0])) {
-
 			onEnterValues = new OnMethodEnterReturn();
 			onEnterValues.setPackageName(agentArgs[0]);
 			onEnterValues.setCommitHash(agentArgs[1]);
 			onEnterValues.setRunId(Integer.parseInt(agentArgs[2]));
-			onEnterValues.setStartTime(System.currentTimeMillis());
+//			onEnterValues.setStartTime(System.currentTimeMillis());
 			String className = parseClassName(method);
 			System.out.println("[ENTER] -\t[CLASS] : " + className + "\t[METHOD] : " + method);
 			MethodEnter m = new MethodEnter(onEnterValues.getCommitHash(), className, method, onEnterValues.getRunId());
 			int methodId = m.getId();
 			onEnterValues.setMethodId(methodId);
+			onEnterValues.setStartTime(m.getStartTime());
 	
 	//		read stack
 	//		var walker =  StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);

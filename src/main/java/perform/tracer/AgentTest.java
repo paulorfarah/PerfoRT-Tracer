@@ -1,4 +1,4 @@
-package perfrt.profiler;
+package perform.tracer;
 
 import java.io.FileNotFoundException;
 import java.io.PrintStream;
@@ -15,8 +15,8 @@ class AgentTest {
 		String[] agentArgs = arguments.trim().split("\\s*,\\s*");
 
 		try {
-			PrintStream fileOut = new PrintStream("../../perfrt/logs/" + agentArgs[0] + "-" + agentArgs[1] + "-"
-					+ agentArgs[2] + "-perfrt-profiler.log");
+			PrintStream fileOut = new PrintStream("../../perform/logs/" + agentArgs[0] + "-" + agentArgs[1] + "-"
+					+ agentArgs[2] + "-perform-tracer.log");
 			System.setOut(fileOut);
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();

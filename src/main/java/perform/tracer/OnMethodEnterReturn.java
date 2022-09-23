@@ -1,4 +1,4 @@
-package perfrt.profiler;
+package perform.tracer;
 
 public class OnMethodEnterReturn {
 	private long startTime;
